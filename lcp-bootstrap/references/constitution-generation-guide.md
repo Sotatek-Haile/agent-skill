@@ -1,0 +1,154 @@
+# Constitution Generation Guide
+
+`.specify/memory/constitution.md` = single source of truth cho spec-kit.
+Mọi `/speckit.*` command đọc file này trước khi generate spec/plan/tasks.
+
+Khác với L1 (AI context chung), constitution chứa:
+- Chi tiết đầy đủ về implementation patterns
+- Danh sách entities/models hiện có
+- Shared services & cách dùng
+- Checklist tạo feature mới
+- Feature dependency graph chi tiết
+
+---
+
+## Structure Template
+
+```markdown
+# {Project Name} Constitution
+
+This constitution is the **single source of truth** for all coding rules, architecture, and conventions.
+Every spec-kit command (`/speckit.specify`, `/speckit.plan`, `/speckit.tasks`, `/speckit.implement`) **MUST** comply with these principles.
+
+High-level domain context & business flows: `wiki/global/project-overview.md`
+Technical architecture details: `wiki/global/architecture.md`
+
+## Core Principles
+
+### I. {Data/API Contract Strategy}
+{Mô tả cách types/contracts được định nghĩa và chia sẻ giữa BE/FE}
+- {Ví dụ: Contract-first với @project/contracts, hoặc OpenAPI-generated, hoặc tRPC}
+
+### II. Database — Already Created (use existing, update if needed)
+{Liệt kê tất cả entities/models theo feature}
+- {Feature 001}: {table1}, {table2}
+- {Feature 002}: {table3}, {table4}
+
+### III. Shared Infrastructure (USE, DO NOT recreate)
+{Liệt kê shared services, validators, utilities đã có}
+- {ServiceName}: location, mục đích, cách dùng
+- {Middleware}: location, khi nào dùng
+
+### IV. Error Codes & Enums — Already Centralized
+{Đường dẫn file error codes và enums}
+{Convention thêm mới (chỉ append, không xóa)}
+
+### V. Dependency Isolation
+| Package | Can import | CANNOT import |
+|---|---|---|
+| {package} | {allowed} | {forbidden} |
+
+### VI. Backend Architecture ({Framework})
+{3-5 điểm architecture quan trọng nhất}
+- Layer structure
+- Module/DI pattern
+- Response convention
+- Auth pattern
+- Env var validation
+
+### VII. Frontend Architecture ({Framework})
+{3-5 điểm architecture quan trọng nhất}
+- Component source (shared library vs app-local)
+- State management pattern
+- API call pattern
+- Form pattern
+- Styling convention
+
+### VIII. Naming Conventions
+{File, class, function, DB table, column, API endpoint conventions}
+
+## What You Need to Create per Feature
+
+### Backend
+{Numbered checklist các file/class cần tạo cho mỗi feature}
+
+### Frontend
+{Numbered checklist các file/component cần tạo}
+
+### Already exists (use & update, do NOT recreate)
+{Liệt kê những gì đã có, dev chỉ cần update}
+
+## Feature Dependency Graph
+
+```
+{Feature map dạng ASCII tree, tương tự L1 nhưng chi tiết hơn}
+```
+
+{Cross-feature dependencies prose}
+
+## Governance
+
+This constitution is automatically injected into every spec-kit command.
+Any amendment requires updating:
+1. `.specify/memory/constitution.md` (this file)
+2. `wiki/global/project-overview.md`
+3. `wiki/global/architecture.md`
+4. `CLAUDE.md`
+
+**Version**: 1.0.0 | **Ratified**: {date}
+```
+
+---
+
+## Phân biệt Constitution vs L1
+
+| Khía cạnh | L1 (AI context) | Constitution (spec-kit) |
+|---|---|---|
+| Inject khi | Mọi prompt | Chỉ /speckit.* commands |
+| Token budget | ~300 tokens | Không giới hạn (~500-800 dòng) |
+| Nội dung | Summary + critical rules | Full implementation guide |
+| Entities | Cross-feature dependencies | Toàn bộ entity list |
+| Examples | Code snippets ngắn | Full usage patterns |
+| Audience | AI coding assistant | AI spec/plan/tasks generator |
+
+---
+
+## Extraction từ Requirements
+
+Khi generate constitution từ requirements + WBS:
+
+**Section I — Contract Strategy:**
+- Nếu monorepo → `packages/contracts/` shared types
+- Nếu separate repos → OpenAPI / GraphQL schema / tRPC
+- Nếu không rõ → đề xuất shared types package
+
+**Section II — Database:**
+- Extract từ WBS feature list → mỗi feature có entity gì
+- Nếu chưa biết chi tiết → ghi placeholder `{feature}: TBD - to be defined during implementation`
+
+**Section III — Shared Infrastructure:**
+- Suy luận từ tech stack:
+  - NestJS → EpcisCoreModule / ValidationPipeline pattern
+  - Auth → JWT/session guard pattern
+  - File upload → S3/local storage service
+  - Email → Mailer service
+
+**Section VI/VII — Architecture:**
+- Copy patterns chuẩn từ tech stack (NestJS = 3-layer, Next.js = App Router conventions)
+- Customize theo constraints trong requirements
+
+**Feature Dependency Graph:**
+- Extract từ WBS dependency column hoặc suy luận từ data flow trong requirements
+- Format giống L1 nhưng thêm shared data dependencies
+
+---
+
+## Điểm khác biệt quan trọng
+
+Constitution KHÔNG được thiếu:
+1. **Entity list** — spec-kit dùng để tránh tạo duplicate entities
+2. **Shared services** với code example — spec-kit copy pattern này vào generated specs
+3. **What to create checklist** — spec-kit dùng làm template cho tasks
+4. **Feature dependency graph** — spec-kit dùng để order tasks đúng
+
+Constitution được phép dài — đây là reference document, không phải injected context.
