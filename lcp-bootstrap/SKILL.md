@@ -91,7 +91,7 @@ Phân tích requirements để extract:
 
 ## Bước 3: Generate Wiki
 
-Tạo `wiki/global/project-overview.md`:
+### 3a. `wiki/global/project-overview.md` (từ requirements + WBS)
 - Mô tả đầy đủ domain + business context
 - Actors và use cases chi tiết
 - Feature descriptions (mỗi feature 3-5 câu)
@@ -99,8 +99,30 @@ Tạo `wiki/global/project-overview.md`:
 - Data flow giữa các features
 - Glossary (thuật ngữ domain-specific)
 
-File này = L3, không inject tự động, AI đọc khi cần.
 Target: 300-600 dòng.
+
+### 3b. `wiki/global/architecture.md` (từ codebase hiện có)
+
+**Nguồn đọc — theo thứ tự ưu tiên:**
+1. Nếu đã có `wiki/global/architecture.md` → đọc và dùng làm base, enrich thêm
+2. Nếu có `docs/system-architecture.md` hoặc `docs/*.md` → extract thông tin
+3. Scan cấu trúc thư mục thực tế của project (monorepo layout, package names, config files)
+4. Đọc `package.json` / `tsconfig.json` / `docker-compose.yml` để lấy stack và port
+5. Từ requirements nếu không có gì khác
+
+**Nội dung cần có:**
+- Monorepo/directory structure (thực tế, không phải lý thuyết)
+- Tech stack với version cụ thể
+- Package dependency graph (package nào import được package nào)
+- API contracts / type sharing strategy
+- DB schema overview (entities chính và relations)
+- Auth flow
+- Port mapping / deployment topology
+- Design system / color palette (nếu FE)
+
+Target: 500-1000 dòng. File này được constitution reference trực tiếp.
+
+Cả 2 file = L3, không inject tự động, AI đọc khi cần.
 
 ---
 
@@ -193,7 +215,7 @@ Tạo `.claude/manifest.json` với project-specific config:
     },
     "L3": {
       "on_demand": true,
-      "hint": "Full reference docs: wiki/global/project-overview.md ({N} lines)"
+      "hint": "Full reference docs: wiki/global/architecture.md ({N} lines), wiki/global/project-overview.md ({N} lines)"
     }
   }
 }
@@ -263,7 +285,7 @@ Tạo hoặc overwrite `CLAUDE.md` với template slim:
 Project context (business domain, critical rules, patterns) is auto-injected via LCP hooks:
 - **L1** (always): project summary + critical rules → `wiki/global/ai-context/L1-always/`
 - **L2** (by keyword): {list domains} → `wiki/global/ai-context/L2-domain/`
-- **L3** (on-demand): full docs → `wiki/global/project-overview.md`
+- **L3** (on-demand): full docs → `wiki/global/architecture.md`, `wiki/global/project-overview.md`
 
 ## Starting Development
 Before writing any code:
@@ -276,6 +298,7 @@ Before writing any code:
 {1-line per layer: Backend, Frontend, Shared, Package manager}
 
 ## Wiki
+- `wiki/global/architecture.md` — full technical reference
 - `wiki/global/project-overview.md` — domain & business flows
 - `wiki/specs/{id}-{name}/` — per-feature specs
 ```
@@ -320,7 +343,8 @@ Infrastructure:
   .claude/manifest.json                    ← LCP config
 
 Generated:
-  wiki/global/project-overview.md          ← {N} lines (L3)
+  wiki/global/project-overview.md          ← {N} lines (L3, từ requirements)
+  wiki/global/architecture.md              ← {N} lines (L3, từ codebase)
   wiki/global/ai-context/L1-always/        ← 2 files ({N} lines total)
   wiki/global/ai-context/L2-domain/        ← {N} files ({domains})
   .specify/memory/constitution.md          ← {N} lines (spec-kit)
