@@ -1,22 +1,22 @@
 ---
 name: lcp:bootstrap
 description: >-
-  Bootstrap Layered Context Protocol (LCP) cho project mới từ requirements + WBS.
-  Tự động generate wiki, L1/L2 context files, cài hook infrastructure.
-  Dùng khi bắt đầu project mới hoặc onboard AI vào project hiện có.
+  Bootstrap Layered Context Protocol (LCP) for new projects from requirements + WBS.
+  Auto-generates wiki, L1/L2 context files, and installs hook infrastructure.
+  Use when starting a new project or onboarding AI into an existing codebase.
 argument-hint: "<requirements-file> [wbs-file] [--be|--fe|--fullstack] [--with-spec-kit]"
 metadata:
-  author: team
+  author: hai.le
   version: "1.0.0"
 ---
 
 # LCP Bootstrap
 
-Tự động thiết lập Layered Context Protocol cho project mới:
-- Đọc requirements + WBS → extract domain, actors, features, tech stack, rules
-- Generate L1/L2 context files + wiki
-- Cài hook infrastructure (context-injector + settings)
-- Optionally chạy spec-kit để generate feature specs
+Automatically sets up the Layered Context Protocol for a new or existing project:
+- Reads requirements + WBS → extracts domain, actors, features, tech stack, rules
+- Generates L1/L2 context files + wiki docs
+- Installs hook infrastructure (context-injector + settings)
+- Optionally runs spec-kit to generate feature specs
 
 ## Usage
 
@@ -25,12 +25,12 @@ Tự động thiết lập Layered Context Protocol cho project mới:
 ```
 
 **Arguments:**
-- `requirements-file` — đường dẫn tới file requirements (md, pdf, docx, txt)
-- `wbs-file` — (optional) đường dẫn tới WBS file (xlsx, md, csv)
-- `--be` — project chỉ có backend
-- `--fe` — project chỉ có frontend
-- `--fullstack` — project có cả BE + FE (default nếu không chỉ định)
-- `--with-spec-kit` — chạy spec-kit sau khi generate LCP để tạo feature specs
+- `requirements-file` — path to requirements file (md, pdf, docx, txt)
+- `wbs-file` — (optional) path to WBS file (xlsx, md, csv)
+- `--be` — backend-only project
+- `--fe` — frontend-only project
+- `--fullstack` — project with both BE + FE (default if not specified)
+- `--with-spec-kit` — run spec-kit after LCP generation to create feature specs
 
 **Examples:**
 ```
@@ -41,37 +41,37 @@ Tự động thiết lập Layered Context Protocol cho project mới:
 
 ---
 
-## Bước 1: Đọc Input Files
+## Step 1: Read Input Files
 
-Đọc requirements file trước:
-- Nếu file là `.pdf` hoặc `.xlsx`: dùng `ck:ai-multimodal` skill để extract nội dung
-- Nếu là `.md` / `.txt` / `.docx`: đọc trực tiếp bằng Read tool
+Read the requirements file first:
+- If `.pdf` or `.xlsx`: use the `ck:ai-multimodal` skill to extract content
+- If `.md` / `.txt` / `.docx`: read directly with the Read tool
 
-Nếu có WBS file, đọc thêm để lấy: danh sách feature IDs, timeline, team structure.
+If a WBS file is provided, read it to extract: feature IDs, timeline, team structure.
 
-Nếu chưa có `--be/--fe/--fullstack`, auto-detect từ nội dung requirements:
-- Có mention "API", "backend", "server", "database" → BE
-- Có mention "UI", "frontend", "React", "Next.js", "web app", "mobile" → FE
-- Có cả hai → fullstack
+If `--be/--fe/--fullstack` is not specified, auto-detect from requirements content:
+- Mentions "API", "backend", "server", "database" → BE
+- Mentions "UI", "frontend", "React", "Next.js", "web app", "mobile" → FE
+- Both present → fullstack
 
 ---
 
-## Bước 2: Extract Project Information
+## Step 2: Extract Project Information
 
-Phân tích requirements để extract:
+Analyze requirements to extract:
 
 **Project Identity:**
-- Tên project (từ title hoặc header đầu tiên)
+- Project name (from title or first header)
 - Domain/industry (healthcare, fintech, logistics, ecommerce, etc.)
-- Mô tả ngắn hệ thống làm gì, cho ai
+- Short description of what the system does and who it serves
 
 **Actors:**
-- Danh sách actors/users (tên, portal/app, quyền hạn)
+- List of actors/users (name, portal/app, permissions)
 
 **Feature Map:**
-- List features từ WBS hoặc requirements
-- Tổ chức theo dependency (feature nào cần feature nào trước)
-- Phân biệt WRITE features vs READ-ONLY features
+- List features from WBS or requirements
+- Organize by dependency (which features depend on which)
+- Distinguish WRITE features from READ-ONLY features
 
 **Tech Stack:**
 - Backend: framework, DB, cache, queue
@@ -79,101 +79,101 @@ Phân tích requirements để extract:
 - Shared: type system, monorepo tool
 
 **Cross-Feature Dependencies:**
-- Shared entities/tables dùng bởi nhiều features
+- Shared entities/tables used by multiple features
 - Shared services/validators
-- Data flow quan trọng giữa các features
+- Important data flows between features
 
 **Critical Rules:**
-- Suy luận từ tech stack (xem `references/l1-generation-guide.md`)
-- Extract từ requirements nếu có constraint rõ ràng
+- Infer from tech stack (see `references/l1-generation-guide.md`)
+- Extract explicit constraints from requirements
 
 ---
 
-## Bước 3: Generate Wiki
+## Step 3: Generate Wiki
 
-### 3a. `wiki/global/project-overview.md` (từ requirements + WBS)
-- Mô tả đầy đủ domain + business context
-- Actors và use cases chi tiết
-- Feature descriptions (mỗi feature 3-5 câu)
-- Business rules quan trọng
-- Data flow giữa các features
-- Glossary (thuật ngữ domain-specific)
+### 3a. `wiki/global/project-overview.md` (from requirements + WBS)
+- Full domain + business context description
+- Actors and use cases in detail
+- Feature descriptions (3-5 sentences per feature)
+- Important business rules
+- Data flows between features
+- Glossary (domain-specific terminology)
 
-Target: 300-600 dòng.
+Target: 300-600 lines.
 
-### 3b. `wiki/global/architecture.md` (từ codebase hiện có)
+### 3b. `wiki/global/architecture.md` (from existing codebase)
 
-**Nguồn đọc — theo thứ tự ưu tiên:**
-1. Nếu đã có `wiki/global/architecture.md` → đọc và dùng làm base, enrich thêm
-2. Nếu có `docs/system-architecture.md` hoặc `docs/*.md` → extract thông tin
-3. Scan cấu trúc thư mục thực tế của project (monorepo layout, package names, config files)
-4. Đọc `package.json` / `tsconfig.json` / `docker-compose.yml` để lấy stack và port
-5. Từ requirements nếu không có gì khác
+**Source reading — in priority order:**
+1. If `wiki/global/architecture.md` already exists → read and use as base, enrich further
+2. If `docs/system-architecture.md` or `docs/*.md` exists → extract information
+3. Scan actual project directory structure (monorepo layout, package names, config files)
+4. Read `package.json` / `tsconfig.json` / `docker-compose.yml` for stack and ports
+5. Fall back to requirements if nothing else is available
 
-**Nội dung cần có:**
-- Monorepo/directory structure (thực tế, không phải lý thuyết)
-- Tech stack với version cụ thể
-- Package dependency graph (package nào import được package nào)
+**Content required:**
+- Monorepo/directory structure (actual, not theoretical)
+- Tech stack with specific versions
+- Package dependency graph (which packages can import which)
 - API contracts / type sharing strategy
-- DB schema overview (entities chính và relations)
+- DB schema overview (main entities and relations)
 - Auth flow
 - Port mapping / deployment topology
-- Design system / color palette (nếu FE)
+- Design system / color palette (if FE)
 
-Target: 500-1000 dòng. File này được constitution reference trực tiếp.
+Target: 500-1000 lines. This file is referenced directly by the constitution.
 
-Cả 2 file = L3, không inject tự động, AI đọc khi cần.
+Both files = L3, not auto-injected — AI reads on demand.
 
 ---
 
-## Bước 4: Generate L1 Files
+## Step 4: Generate L1 Files
 
-Đọc `references/l1-generation-guide.md` để hiểu format.
+Read `references/l1-generation-guide.md` to understand the format.
 
-Tạo `wiki/global/ai-context/L1-always/01-project-summary.md`:
-- Project identity + domain (2-3 câu)
-- Monorepo structure (nếu có)
+Create `wiki/global/ai-context/L1-always/01-project-summary.md`:
+- Project identity + domain (2-3 sentences)
+- Monorepo structure (if applicable)
 - Actors table
-- Feature map với dependency graph
+- Feature map with dependency graph
 - Key cross-feature dependencies
 
-Tạo `wiki/global/ai-context/L1-always/02-critical-rules.md`:
-- Suy luận rules từ tech stack
-- Chỉ include rules mà vi phạm gây bug/conflict khó debug
-- Format: tên rule + code example ✅/❌ + lý do ngắn
+Create `wiki/global/ai-context/L1-always/02-critical-rules.md`:
+- Rules inferred from tech stack
+- Only include rules where violations cause hard-to-debug bugs or conflicts
+- Format: rule name + code example ✅/❌ + brief reason
 
-Giới hạn tổng: 2 file không quá 150 dòng.
+Total limit: both files must not exceed 150 lines combined.
 
 ---
 
-## Bước 5: Generate L2 Files
+## Step 5: Generate L2 Files
 
-Đọc `references/l2-generation-guide.md` để hiểu domain nào cần tạo.
+Read `references/l2-generation-guide.md` to determine which domains to create.
 
-Tạo L2 files phù hợp với project type:
+Create L2 files appropriate for the project type:
 
-**Nếu có BE:**
+**If BE:**
 - `wiki/global/ai-context/L2-domain/backend.md`
 
-**Nếu có FE:**
+**If FE:**
 - `wiki/global/ai-context/L2-domain/frontend.md`
 
-**Nếu có DB/ORM:**
+**If DB/ORM:**
 - `wiki/global/ai-context/L2-domain/database.md`
 
-**Nếu có design system / Tailwind:**
+**If design system / Tailwind:**
 - `wiki/global/ai-context/L2-domain/style.md`
 
-**Nếu project có layer đặc thù** (blockchain, queue, mobile...):
-- Tạo thêm domain tương ứng
+**If project has a specialized layer** (blockchain, queue, mobile...):
+- Create the corresponding domain file
 
-Giới hạn mỗi file: 100-150 dòng.
+Limit per file: 100-150 lines.
 
 ---
 
-## Bước 6: Cài Hook Infrastructure
+## Step 6: Install Hook Infrastructure
 
-Tạo thư mục nếu chưa có:
+Create directories if not present:
 ```
 .claude/hooks/
 wiki/global/ai-context/L1-always/
@@ -183,17 +183,17 @@ wiki/global/ai-context/L2-domain/
 Copy template files:
 
 **`.claude/hooks/context-injector.cjs`**
-Đọc nội dung từ `references/templates/context-injector.cjs` và write vào project.
+Read content from `references/templates/context-injector.cjs` and write to the project.
 
 **`.claude/settings.json`**
-Nếu file đã tồn tại: merge hook entry vào `hooks.UserPromptSubmit` array, KHÔNG overwrite toàn bộ.
-Nếu chưa tồn tại: copy từ `references/templates/settings.json`.
+If file exists: merge hook entry into the `hooks.UserPromptSubmit` array — do NOT overwrite the entire file.
+If not present: copy from `references/templates/settings.json`.
 
 ---
 
-## Bước 7: Generate manifest.json
+## Step 7: Generate manifest.json
 
-Tạo `.claude/manifest.json` với project-specific config:
+Create `.claude/manifest.json` with project-specific config:
 
 ```json
 {
@@ -209,8 +209,8 @@ Tạo `.claude/manifest.json` với project-specific config:
     },
     "L2": {
       "domains": {
-        // Chỉ include domains đã tạo ở Bước 5
-        // Keywords dựa theo tech stack cụ thể của project
+        // Only include domains created in Step 5
+        // Keywords based on the project's specific tech stack
       }
     },
     "L3": {
@@ -221,46 +221,46 @@ Tạo `.claude/manifest.json` với project-specific config:
 }
 ```
 
-Keywords trong L2: dùng defaults từ `references/l2-generation-guide.md` + thêm framework-specific keywords từ tech stack của project.
+L2 keywords: use defaults from `references/l2-generation-guide.md` + add framework-specific keywords from the project's tech stack.
 
 ---
 
-## Bước 8: Generate Constitution (spec-kit)
+## Step 8: Generate Constitution (spec-kit)
 
-Đọc `references/constitution-generation-guide.md` để hiểu format.
+Read `references/constitution-generation-guide.md` to understand the format.
 
-Tạo thư mục và file:
+Create directory and file:
 ```
 .specify/memory/constitution.md
 ```
 
-Constitution có 2 loại nội dung:
+Constitution contains two categories of content:
 
-**Project-specific** (extract từ requirements):
+**Project-specific** (extracted from requirements):
 - Project name + domain references (wiki paths)
 - Contract/types strategy (monorepo shared types vs OpenAPI vs tRPC)
-- Database entity list theo feature (placeholder nếu chưa biết chi tiết)
+- Database entity list per feature (placeholder if details unknown)
 - Feature dependency graph
-- Shared services / validation pipelines đặc thù của project
+- Shared services / validation pipelines specific to the project
 
-**Tech-stack-driven** (pattern chuẩn theo framework):
+**Tech-stack-driven** (standard patterns per framework):
 - Backend architecture (NestJS 3-layer, Express middleware, FastAPI routers...)
 - Frontend architecture (Next.js App Router, React Query, form patterns...)
 - Naming conventions
 - What to create per feature checklist
 
-Format constitution theo structure trong guide. Target: 300-600 dòng.
+Format the constitution per the guide structure. Target: 300-600 lines.
 
-Nếu project dùng `--with-spec-kit` flag → sau khi generate xong, chạy thêm:
+If the project uses the `--with-spec-kit` flag → after generation, also run:
 ```
-/speckit.constitution   # validate & enrich constitution vừa tạo
+/speckit.constitution   # validate & enrich the just-created constitution
 ```
 
 ---
 
-## Bước 9: Update .gitignore
+## Step 9: Update .gitignore
 
-Kiểm tra `.gitignore` hiện tại. Nếu chưa có LCP patterns, append:
+Check the current `.gitignore`. If LCP patterns are absent, append:
 
 ```
 # Claude Code — ignore personal files, track shared config
@@ -270,13 +270,13 @@ Kiểm tra `.gitignore` hiện tại. Nếu chưa có LCP patterns, append:
 !.claude/manifest.json
 ```
 
-Nếu đã có `.claude` entry cũ (kiểu `.claude/` hoặc `.claude`), replace bằng pattern mới.
+If an old `.claude` entry exists (e.g. `.claude/` or `.claude`), replace it with the new pattern.
 
 ---
 
-## Bước 10: Generate CLAUDE.md
+## Step 10: Generate CLAUDE.md
 
-Tạo hoặc overwrite `CLAUDE.md` với template slim:
+Create or overwrite `CLAUDE.md` with the slim template:
 
 ```markdown
 # Project: {Project Name}
@@ -303,39 +303,40 @@ Before writing any code:
 - `wiki/specs/{id}-{name}/` — per-feature specs
 ```
 
-Nếu `CLAUDE.md` đã tồn tại với content quan trọng: đọc trước, giữ lại phần không trùng với LCP, thêm LCP context block vào đầu.
+If `CLAUDE.md` already exists with important content: read it first, keep parts that don't overlap with LCP, then prepend the LCP context block.
 
 ---
 
-## Bước 11: Spec-Kit Init (nếu --with-spec-kit)
+## Step 11: Spec-Kit Init (if --with-spec-kit)
 
-Sau khi LCP infrastructure xong, kích hoạt spec-kit:
+After LCP infrastructure is ready, activate spec-kit:
 
-1. Activate `/speckit.constitution` để tạo project constitution từ requirements
-2. Với mỗi feature trong WBS: activate `/speckit.specify` để tạo feature spec
+1. Activate `/speckit.constitution` to create the project constitution from requirements
+2. For each feature in the WBS: activate `/speckit.specify` to create a feature spec
 
-User có thể bỏ qua bước này và chạy spec-kit riêng sau.
+The user can skip this step and run spec-kit separately later.
 
 ---
 
-## Bước 12: Verification
+## Step 12: Verification
 
-Chạy kiểm tra:
+Run the check:
 ```bash
 echo '{"prompt":"test"}' | node .claude/hooks/context-injector.cjs
 ```
 
-Nếu output có `## Injected Context` → LCP hoạt động.
-Nếu lỗi → debug và fix.
+If output contains `## Injected Context` → LCP is working.
+If error → debug and fix.
 
 ---
 
-## Bước 13: Summary Report
+## Step 13: Summary Report
 
-In ra:
+Print:
 
 ```
 ✅ LCP Bootstrap Complete — {project-name}
+   Developed by hai.le
 
 Infrastructure:
   .claude/hooks/context-injector.cjs       ← hook script
@@ -343,8 +344,8 @@ Infrastructure:
   .claude/manifest.json                    ← LCP config
 
 Generated:
-  wiki/global/project-overview.md          ← {N} lines (L3, từ requirements)
-  wiki/global/architecture.md              ← {N} lines (L3, từ codebase)
+  wiki/global/project-overview.md          ← {N} lines (L3, from requirements)
+  wiki/global/architecture.md              ← {N} lines (L3, from codebase)
   wiki/global/ai-context/L1-always/        ← 2 files ({N} lines total)
   wiki/global/ai-context/L2-domain/        ← {N} files ({domains})
   .specify/memory/constitution.md          ← {N} lines (spec-kit)
@@ -353,18 +354,18 @@ Generated:
 Test result: {PASS/FAIL}
 
 Next steps:
-  1. Review generated files, adjust content nếu cần
+  1. Review generated files, adjust content if needed
   2. git add + commit: feat(ai-tooling): init LCP context protocol
-  3. {Nếu --with-spec-kit}: spec-kit đã init → xem wiki/specs/
-  4. Mở Claude session mới để verify context injection
+  3. {If --with-spec-kit}: spec-kit initialized → see wiki/specs/
+  4. Open a new Claude session to verify context injection
 ```
 
 ---
 
 ## References
 
-- `references/l1-generation-guide.md` — format + rules khi viết L1 files
+- `references/l1-generation-guide.md` — format + rules for writing L1 files
 - `references/l2-generation-guide.md` — domain selection + content guide
-- `references/constitution-generation-guide.md` — structure + extraction guide cho .specify/memory/constitution.md
+- `references/constitution-generation-guide.md` — structure + extraction guide for .specify/memory/constitution.md
 - `references/templates/context-injector.cjs` — hook script template
 - `references/templates/settings.json` — settings template
