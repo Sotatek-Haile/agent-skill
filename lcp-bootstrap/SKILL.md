@@ -225,16 +225,53 @@ L2 keywords: use defaults from `references/l2-generation-guide.md` + add framewo
 
 ---
 
-## Step 8: Generate Constitution (spec-kit)
+## Step 8: Configure spec-kit
+
+### 8a. Initialize spec-kit
+
+Run the spec-kit init script to scaffold the `.specify/` directory:
+```bash
+npx speckit init
+# or if spec-kit is installed globally:
+speckit init
+```
+
+This creates the default structure under `.specify/` with scripts that output specs to `specs/` at the repo root.
+
+### 8b. Patch spec output directory → `wiki/specs/`
+
+By default spec-kit outputs feature specs to `$REPO_ROOT/specs/`. Patch two scripts to redirect output to `wiki/specs/` so specs live alongside wiki docs:
+
+**`.specify/scripts/bash/create-new-feature.sh`** — find and replace:
+```bash
+# BEFORE (default)
+SPECS_DIR="$REPO_ROOT/specs"
+
+# AFTER
+SPECS_DIR="$REPO_ROOT/wiki/specs"
+```
+
+**`.specify/scripts/bash/common.sh`** — find and replace all occurrences:
+```bash
+# BEFORE (default)
+local specs_dir="$repo_root/specs"
+get_feature_dir() { echo "$1/specs/$2"; }
+
+# AFTER
+local specs_dir="$repo_root/wiki/specs"
+get_feature_dir() { echo "$1/wiki/specs/$2"; }
+```
+
+After patching, create the directory:
+```bash
+mkdir -p wiki/specs
+```
+
+### 8c. Generate Constitution
 
 Read `references/constitution-generation-guide.md` to understand the format.
 
-Create directory and file:
-```
-.specify/memory/constitution.md
-```
-
-Constitution contains two categories of content:
+Create `.specify/memory/constitution.md` with two categories of content:
 
 **Project-specific** (extracted from requirements):
 - Project name + domain references (wiki paths)
@@ -349,6 +386,8 @@ Generated:
   wiki/global/ai-context/L1-always/        ← 2 files ({N} lines total)
   wiki/global/ai-context/L2-domain/        ← {N} files ({domains})
   .specify/memory/constitution.md          ← {N} lines (spec-kit)
+  .specify/scripts/bash/                  ← patched (specs → wiki/specs/)
+  wiki/specs/                             ← spec output directory
   CLAUDE.md                                ← updated
 
 Test result: {PASS/FAIL}
