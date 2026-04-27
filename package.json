@@ -1,0 +1,20 @@
+{
+  "name": "@sotatek-haile/agent-skill",
+  "version": "1.0.0",
+  "description": "Claude Code skills for AI-assisted development workflows",
+  "bin": {
+    "agent-skill": "./install.js"
+  },
+  "files": [
+    "install.js",
+    "lcp-bootstrap/"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sotatek-Haile/agent-skill.git"
+  }
+}
