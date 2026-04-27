@@ -42,6 +42,16 @@ npx --yes github:Sotatek-Haile/agent-skill lcp-bootstrap
 
 > `--yes` forces npx to re-fetch from GitHub instead of using local cache.
 
+### Uninstall
+
+```bash
+# All skills
+npx github:Sotatek-Haile/agent-skill uninstall
+
+# Specific skill
+npx github:Sotatek-Haile/agent-skill uninstall lcp-bootstrap
+```
+
 ---
 
 ## Skill: `lcp:bootstrap`

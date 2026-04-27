@@ -6,12 +6,21 @@ const os = require('os');
 
 const SKILLS_DIR = path.join(os.homedir(), '.claude', 'skills');
 const ROOT_DIR = __dirname;
+const RESERVED = ['uninstall', '--list', '--yes'];
 
-// Auto-discover skills: any subdirectory that contains a SKILL.md file
+// Auto-discover skills: any subdirectory containing a SKILL.md file
 function discoverSkills() {
   return fs.readdirSync(ROOT_DIR, { withFileTypes: true })
     .filter(e => e.isDirectory() && fs.existsSync(path.join(ROOT_DIR, e.name, 'SKILL.md')))
     .map(e => e.name);
+}
+
+function getSkillCommand(skill) {
+  const skillMd = path.join(ROOT_DIR, skill, 'SKILL.md');
+  const match = fs.existsSync(skillMd)
+    ? fs.readFileSync(skillMd, 'utf8').match(/^name:\s*(.+)$/m)
+    : null;
+  return match ? match[1].trim() : skill;
 }
 
 function copyDir(src, dest) {
@@ -27,19 +36,63 @@ function copyDir(src, dest) {
   }
 }
 
-function installSkill(skill) {
-  const srcDir = path.join(ROOT_DIR, skill);
-  const destDir = path.join(SKILLS_DIR, skill);
-  const isUpdate = fs.existsSync(destDir);
-  copyDir(srcDir, destDir);
-  console.log(`  ${isUpdate ? '🔄 Updated' : '✅ Installed'}  ${skill}`);
+function install(targets, available) {
+  const invalid = targets.filter(s => !available.includes(s));
+  if (invalid.length > 0) {
+    console.error(`\n❌ Unknown skill(s): ${invalid.join(', ')}`);
+    printUsage(available);
+    process.exit(1);
+  }
+
+  const label = targets.length === available.length ? 'all' : targets.length;
+  console.log(`\nInstalling ${label} skill(s) into ${SKILLS_DIR}...\n`);
+  fs.mkdirSync(SKILLS_DIR, { recursive: true });
+
+  targets.forEach(skill => {
+    const destDir = path.join(SKILLS_DIR, skill);
+    const isUpdate = fs.existsSync(destDir);
+    copyDir(path.join(ROOT_DIR, skill), destDir);
+    console.log(`  ${isUpdate ? '🔄 Updated' : '✅ Installed'}  ${skill}`);
+  });
+
+  console.log('\nDone! Open Claude Code in any project and try:');
+  targets.forEach(s => console.log(`  /${getSkillCommand(s)}`));
+  console.log();
+}
+
+function uninstall(targets, available) {
+  const invalid = targets.filter(s => !available.includes(s));
+  if (invalid.length > 0) {
+    console.error(`\n❌ Unknown skill(s): ${invalid.join(', ')}`);
+    printUsage(available);
+    process.exit(1);
+  }
+
+  const label = targets.length === available.length ? 'all' : targets.length;
+  console.log(`\nUninstalling ${label} skill(s) from ${SKILLS_DIR}...\n`);
+
+  targets.forEach(skill => {
+    const destDir = path.join(SKILLS_DIR, skill);
+    if (!fs.existsSync(destDir)) {
+      console.log(`  ⚠️  Not installed: ${skill} — skipped`);
+      return;
+    }
+    fs.rmSync(destDir, { recursive: true, force: true });
+    console.log(`  🗑️  Removed  ${skill}`);
+  });
+
+  console.log('\nDone!\n');
 }
 
 function printUsage(available) {
-  console.log('Usage:');
-  console.log('  npx github:Sotatek-Haile/agent-skill              # install all skills');
-  console.log('  npx github:Sotatek-Haile/agent-skill <skill-name> # install one skill');
-  console.log('  npx github:Sotatek-Haile/agent-skill --list       # list available skills');
+  console.log('\nUsage:');
+  console.log('  npx github:Sotatek-Haile/agent-skill                          # install all');
+  console.log('  npx github:Sotatek-Haile/agent-skill <skill>                  # install one');
+  console.log('  npx --yes github:Sotatek-Haile/agent-skill                    # update all');
+  console.log('  npx --yes github:Sotatek-Haile/agent-skill <skill>            # update one');
+  console.log('  npx github:Sotatek-Haile/agent-skill uninstall                # uninstall all');
+  console.log('  npx github:Sotatek-Haile/agent-skill uninstall <skill>        # uninstall one');
+  console.log('  npx github:Sotatek-Haile/agent-skill --list                   # list skills');
   console.log('\nAvailable skills:');
   available.forEach(s => console.log(`  - ${s}`));
 }
@@ -47,8 +100,9 @@ function printUsage(available) {
 // --- main ---
 
 const available = discoverSkills();
-const args = process.argv.slice(2).filter(a => !a.startsWith('-'));
-const flags = process.argv.slice(2).filter(a => a.startsWith('-'));
+const rawArgs = process.argv.slice(2);
+const flags = rawArgs.filter(a => a.startsWith('-'));
+const args = rawArgs.filter(a => !a.startsWith('-'));
 
 if (flags.includes('--list')) {
   console.log('\nAvailable skills:');
@@ -57,28 +111,10 @@ if (flags.includes('--list')) {
   process.exit(0);
 }
 
-// Resolve which skills to install
-let targets = args.length > 0 ? args : available;
-
-// Validate requested skills
-const invalid = targets.filter(s => !available.includes(s));
-if (invalid.length > 0) {
-  console.error(`\n❌ Unknown skill(s): ${invalid.join(', ')}`);
-  printUsage(available);
-  process.exit(1);
+if (args[0] === 'uninstall') {
+  const targets = args.slice(1).length > 0 ? args.slice(1) : available;
+  uninstall(targets, available);
+} else {
+  const targets = args.length > 0 ? args : available;
+  install(targets, available);
 }
-
-console.log(`\nInstalling ${targets.length === available.length ? 'all' : targets.length} skill(s) into ${SKILLS_DIR}...\n`);
-
-fs.mkdirSync(SKILLS_DIR, { recursive: true });
-targets.forEach(installSkill);
-
-console.log('\nDone! Open Claude Code in any project and try:');
-targets.forEach(s => {
-  // Read the command name from SKILL.md front-matter (name: field)
-  const skillMd = path.join(ROOT_DIR, s, 'SKILL.md');
-  const match = fs.readFileSync(skillMd, 'utf8').match(/^name:\s*(.+)$/m);
-  const cmd = match ? match[1].trim() : s;
-  console.log(`  /${cmd}`);
-});
-console.log();
