@@ -7,7 +7,7 @@
   },
   "files": [
     "install.js",
-    "lcp-bootstrap/"
+    "lcp-kit/"
   ],
   "engines": {
     "node": ">=16"
