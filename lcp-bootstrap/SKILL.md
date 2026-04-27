@@ -54,27 +54,52 @@ Automatically sets up the Layered Context Protocol for a new or existing project
 
 *Runs before Step 1. Skipped if explicit flags are provided.*
 
-If `/lcp:bootstrap` is invoked **without arguments**, enter interactive wizard:
+If `/lcp:bootstrap` is invoked **without arguments**, you MUST ask the user questions before doing anything else — do NOT proceed without user answers.
 
-**Q1 — Mode:**
-  [1] Bootstrap — setting up LCP for the first time
-  [2] Validate  — LCP already exists, check for context drift
+**Prerequisite:** `AskUserQuestion` is a deferred tool. Before calling it, run:
+```
+ToolSearch({ query: "select:AskUserQuestion" })
+```
+Then use the loaded schema to call `AskUserQuestion`.
 
-**Q2 — Project type:** *(auto-detect from codebase when possible)*
-  [1] fullstack  — has both backend + frontend
-  [2] be-only    — backend only
-  [3] fe-only    — frontend only
+**Step 1 — Auto-detect from codebase, then call `AskUserQuestion` with Q1:**
+- `.claude/hooks/` already exists → set default suggestion: Validate
+- `backend/` + `frontend/` dirs present → default project type: fullstack
+- Only `backend/` or `src/` without frontend → default: be-only
+- Only `app/`, `pages/`, `components/` → default: fe-only
 
-**Q3 — Spec-kit?** *(bootstrap mode only)*
-  [1] yes  [2] no
+**Q1 call — `AskUserQuestion`:**
+```
+header: "LCP Bootstrap"
+question: "What would you like to do?"
+options:
+  - label: "Bootstrap"       description: "Set up LCP for the first time"
+  - label: "Validate"        description: "LCP already exists — check for context drift"
+multiSelect: false
+```
 
-**Auto-detect hints (suggest to user, user confirms):**
-- `.claude/hooks/` already exists → suggest Validate
-- `backend/` dir + `frontend/` dir both present → suggest fullstack
-- Only `backend/` or `src/` without frontend → suggest be-only
-- Only `app/`, `pages/`, `components/` → suggest fe-only
+**Q2 call — `AskUserQuestion`:** *(only if Bootstrap selected in Q1)*
+```
+header: "Project Type"
+question: "What type of project is this? (auto-detected: {detected})"
+options:
+  - label: "Fullstack"   description: "Has both backend + frontend"
+  - label: "BE only"     description: "Backend only"
+  - label: "FE only"     description: "Frontend only"
+multiSelect: false
+```
 
-After wizard → proceed with Bootstrap (Steps 1–13) or Validate (Step Validate).
+**Q3 call — `AskUserQuestion`:** *(only if Bootstrap selected in Q1)*
+```
+header: "Spec-kit"
+question: "Run spec-kit after LCP generation to create feature specs?"
+options:
+  - label: "Yes"   description: "Generate feature specs after LCP setup"
+  - label: "No"    description: "Skip spec-kit"
+multiSelect: false
+```
+
+After all answers collected → proceed with Bootstrap (Steps 1–13) or Validate (Step Validate).
 
 ---
 
@@ -352,7 +377,6 @@ Create `.claude/manifest.json`:
     "L2": {
       "domains": {
         // Only include domains created in Step 5
-        // Keywords based on project's specific tech stack
       }
     },
     "L3": {
