@@ -27,7 +27,20 @@ Technical architecture details: `wiki/global/architecture.md`
 
 ### I. {Data/API Contract Strategy}
 {Mô tả cách types/contracts được định nghĩa và chia sẻ giữa BE/FE}
-- {Ví dụ: Contract-first với @project/contracts, hoặc OpenAPI-generated, hoặc tRPC}
+
+**If monorepo with shared types package:**
+- Package: `@{project}/contracts` at `packages/contracts/`
+- Import pattern: `import { CreateXRequest, XResponse } from '@{project}/contracts'`
+- Structure: `packages/contracts/api/{feature}.ts` per feature, `packages/contracts/index.ts` barrel
+- Common types: `packages/contracts/api/common.ts` (ApiResponse<T>, PageMeta, ...)
+- Enums: `packages/contracts/api/enums.ts`
+- ABI (if blockchain): `packages/contracts/abi/`
+- Rule: BE và FE KHÔNG tự tạo types riêng — mọi API contract đi qua package này
+- Rule: package là standalone — KHÔNG import package khác trong monorepo
+- When adding a new feature: create `packages/contracts/api/{feature}.ts` + re-export in `index.ts`
+
+**If separate repos (OpenAPI / tRPC / GraphQL):**
+- {mô tả cách generate và consume schema}
 
 ### II. Database — Already Created (use existing, update if needed)
 {Liệt kê tất cả entities/models theo feature}
@@ -46,7 +59,10 @@ Technical architecture details: `wiki/global/architecture.md`
 ### V. Dependency Isolation
 | Package | Can import | CANNOT import |
 |---|---|---|
-| {package} | {allowed} | {forbidden} |
+| `@{pkg}/contracts` | (standalone) | All other packages |
+| `@{pkg}/backend` | `@{pkg}/contracts` | FE packages, `@{pkg}/commons` |
+| FE apps | `@{pkg}/contracts`, `@{pkg}/commons` | Backend, other FE apps |
+| `@{pkg}/commons` | (standalone) | All other packages |
 
 ### VI. Backend Architecture ({Framework})
 {3-5 điểm architecture quan trọng nhất}
@@ -74,6 +90,11 @@ Technical architecture details: `wiki/global/architecture.md`
 
 ### Frontend
 {Numbered checklist các file/component cần tạo}
+
+### Contracts (if monorepo)
+1. Create `packages/contracts/api/{feature-slug}.ts` with request/response interfaces
+2. Re-export in `packages/contracts/index.ts`
+3. Import in BE service and FE API layer from `@{project}/contracts`
 
 ### Already exists (use & update, do NOT recreate)
 {Liệt kê những gì đã có, dev chỉ cần update}
@@ -118,9 +139,10 @@ Any amendment requires updating:
 Khi generate constitution từ requirements + WBS:
 
 **Section I — Contract Strategy:**
-- Nếu monorepo → `packages/contracts/` shared types
+- Nếu monorepo + `packages/contracts/` đã tồn tại → document cấu trúc hiện có
+- Nếu monorepo + `packages/contracts/` chưa có → skill đã tạo scaffold ở Step 6.5, reference đó
 - Nếu separate repos → OpenAPI / GraphQL schema / tRPC
-- Nếu không rõ → đề xuất shared types package
+- Nếu không rõ → đề xuất shared types package, ghi placeholder
 
 **Section II — Database:**
 - Extract từ WBS feature list → mỗi feature có entity gì
@@ -132,6 +154,11 @@ Khi generate constitution từ requirements + WBS:
   - Auth → JWT/session guard pattern
   - File upload → S3/local storage service
   - Email → Mailer service
+
+**Section V — Dependency Isolation:**
+- Bắt buộc nếu monorepo với ≥2 packages
+- Extract từ `packages/*/package.json` `dependencies` field để xác định allowed imports
+- Nếu không có packages/ → bỏ qua section
 
 **Section VI/VII — Architecture:**
 - Copy patterns chuẩn từ tech stack (NestJS = 3-layer, Next.js = App Router conventions)
@@ -148,7 +175,8 @@ Khi generate constitution từ requirements + WBS:
 Constitution KHÔNG được thiếu:
 1. **Entity list** — spec-kit dùng để tránh tạo duplicate entities
 2. **Shared services** với code example — spec-kit copy pattern này vào generated specs
-3. **What to create checklist** — spec-kit dùng làm template cho tasks
+3. **What to create checklist** — spec-kit dùng làm template cho tasks, bao gồm cả contracts step
 4. **Feature dependency graph** — spec-kit dùng để order tasks đúng
+5. **Contract strategy** với import path cụ thể — spec-kit dùng để generate đúng import statements
 
 Constitution được phép dài — đây là reference document, không phải injected context.
