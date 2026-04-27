@@ -99,6 +99,32 @@ options:
 multiSelect: false
 ```
 
+**Q4 call — `AskUserQuestion`:** *(only if Bootstrap selected in Q1)*
+```
+header: "Requirements File"
+question: "Do you have a requirements document? (PRD, spec, .md / .pdf / .docx / .txt)"
+options:
+  - label: "Yes — I have a file"   description: "AI will read it to extract project context"
+  - label: "No — auto-detect"      description: "AI will scan codebase, docs/, and package.json"
+multiSelect: false
+```
+
+If "Yes": ask the user to type the file path → save as `requirements-file`.
+If "No": proceed without requirements file (Step 1 falls back to codebase scan).
+
+**Q5 call — `AskUserQuestion`:** *(only if Q4 = "Yes — I have a file")*
+```
+header: "WBS File"
+question: "Do you have a WBS file? (feature list, timeline — .xlsx / .md / .csv)"
+options:
+  - label: "Yes — I have a WBS file"   description: "AI will extract feature IDs and timeline"
+  - label: "No"                         description: "Skip WBS, features inferred from requirements"
+multiSelect: false
+```
+
+If "Yes": ask the user to type the WBS file path → save as `wbs-file`.
+If "No": skip.
+
 After all answers collected → proceed with Bootstrap (Steps 1–13) or Validate (Step Validate).
 
 ---
