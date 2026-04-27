@@ -409,7 +409,7 @@ Update `manifest.json` L3 section: add `"index": "wiki/global/ai-context/L3-refe
 
 ## Step 7: Generate manifest.json
 
-Create `.claude/manifest.json`:
+Create `.claude/manifest.json`. For `L2.domains`: include **only** the domain files created in Step 5. Use keywords from `references/l2-generation-guide.md` + framework-specific terms. Each domain has a `file` path and a `keywords` array that triggers injection when matched in the user prompt.
 
 ```json
 {
@@ -424,7 +424,20 @@ Create `.claude/manifest.json`:
       ]
     },
     "L2": {
-      "domains": {}
+      "domains": {
+        "backend": {
+          "file": "wiki/global/ai-context/L2-domain/backend.md",
+          "keywords": ["api", "endpoint", "controller", "service", "dto", "entity", "migration"]
+        },
+        "frontend": {
+          "file": "wiki/global/ai-context/L2-domain/frontend.md",
+          "keywords": ["component", "page", "ui", "form", "hook", "store", "style"]
+        },
+        "database": {
+          "file": "wiki/global/ai-context/L2-domain/database.md",
+          "keywords": ["query", "schema", "table", "index", "migration", "seed"]
+        }
+      }
     },
     "L3": {
       "on_demand": true,
@@ -435,7 +448,7 @@ Create `.claude/manifest.json`:
 }
 ```
 
-L2 keywords: use defaults from `references/l2-generation-guide.md` + framework-specific keywords.
+The example above shows a fullstack project. Omit domains that were NOT created in Step 5 (e.g. omit `database` if project has no ORM layer, omit `frontend` if BE-only).
 
 ---
 
