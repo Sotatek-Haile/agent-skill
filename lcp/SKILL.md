@@ -6,13 +6,13 @@ description: >-
   scaffolds shared packages/contracts/ for all project types (fullstack/fe-only/be-only),
   and validates/updates existing LCP context against codebase drift.
   Use when starting a new project or onboarding AI into an existing codebase.
-argument-hint: "[requirements-file] [wbs-file] [--be|--fe|--fullstack] [--with-spec-kit] [--validate]"
+argument-hint: "(no args = wizard) | [requirements-file] [wbs-file] [--be|--fe|--fullstack] [--with-spec-kit] [--validate]"
 metadata:
   author: hai.le
   version: "2.0.0"
 ---
 
-# LCP Bootstrap
+# LCP
 
 Automatically sets up the Layered Context Protocol for a new or existing project:
 - Reads requirements + WBS → extracts domain, actors, features, tech stack, shared packages, rules
@@ -70,7 +70,7 @@ Then use the loaded schema to call `AskUserQuestion`.
 
 **Q1 call — `AskUserQuestion`:**
 ```
-header: "LCP Bootstrap"
+header: "LCP"
 question: "What would you like to do?"
 options:
   - label: "Bootstrap"       description: "Set up LCP for the first time"
@@ -109,7 +109,15 @@ options:
 multiSelect: false
 ```
 
-If "Yes": ask the user to type the file path → save as `requirements-file`.
+If "Yes": call `AskUserQuestion` to collect the file path:
+```
+header: "Requirements File Path"
+question: "Enter the path to your requirements file:"
+options:
+  - label: "Type path below"   description: "e.g. docs/requirements.md, docs/prd.pdf"
+multiSelect: false
+```
+Wait for user to type path in chat → save as `requirements-file`.
 If "No": proceed without requirements file (Step 1 falls back to codebase scan).
 
 **Q5 call — `AskUserQuestion`:** *(only if Q4 = "Yes — I have a file")*
@@ -122,7 +130,15 @@ options:
 multiSelect: false
 ```
 
-If "Yes": ask the user to type the WBS file path → save as `wbs-file`.
+If "Yes": call `AskUserQuestion` to collect the file path:
+```
+header: "WBS File Path"
+question: "Enter the path to your WBS file:"
+options:
+  - label: "Type path below"   description: "e.g. docs/wbs.xlsx, docs/wbs.md"
+multiSelect: false
+```
+Wait for user to type path in chat → save as `wbs-file`.
 If "No": skip.
 
 After all answers collected → proceed with Bootstrap (Steps 1–13) or Validate (Step Validate).
@@ -332,11 +348,18 @@ Replace `{project-name}`. Leave `modules` empty — developer fills in as BE API
 
 ### Case B — Fullstack (BE code exists)
 
+**Detect BE framework first** by scanning root/backend `package.json` dependencies:
+- `@nestjs/core` → NestJS: scan `**/*.dto.ts`, `**/*.controller.ts`, `**/entities/**/*.ts`
+- `express` / `fastify` → scan `**/routes/**`, `**/schemas/**`, `**/models/**`
+- `django` / `fastapi` → scan `**/serializers.py`, `**/views.py`, `**/models.py`
+- `gin` / `echo` (Go) → scan `**/handler*.go`, `**/model*.go`
+- Unknown → scan `src/` broadly for type/schema/model definitions
+
 Scan BE source to generate real contracts:
 
-1. **Scan `backend/src/**/*.dto.ts`** → extract class fields + `@IsOptional()` markers → JSON Schema properties
-2. **Scan `backend/src/**/*.controller.ts`** → extract route groups → determine feature slugs
-3. **Scan `backend/src/database/entities/**/*.ts`** → extract entity fields → response shapes
+1. **Scan DTO/schema files** (path depends on detected framework above) → extract fields + optional markers → JSON Schema properties
+2. **Scan controller/route files** → extract route groups → determine feature slugs
+3. **Scan entity/model files** → extract fields → response shapes
 4. **Group by feature** — match controller folder names to WBS feature IDs
 5. For each feature → create `packages/contracts/api/{feature-slug}.json` from `references/templates/contracts-api-feature.json.tpl`
 
@@ -401,9 +424,7 @@ Create `.claude/manifest.json`:
       ]
     },
     "L2": {
-      "domains": {
-        // Only include domains created in Step 5
-      }
+      "domains": {}
     },
     "L3": {
       "on_demand": true,
@@ -419,6 +440,8 @@ L2 keywords: use defaults from `references/l2-generation-guide.md` + framework-s
 ---
 
 ## Step 8: Configure spec-kit
+
+*Steps 8a–8b always run (infrastructure setup). Step 8c only runs if `--with-spec-kit` or Q3 = Yes.*
 
 ### 8a. Initialize
 
@@ -512,7 +535,11 @@ Project context is auto-injected via LCP hooks:
 echo '{"prompt":"test"}' | node .claude/hooks/context-injector.cjs
 ```
 
-`## Injected Context` in output → LCP is working.
+- Output contains `## Injected Context` → ✅ LCP is working, proceed to Step 13.
+- Command fails or output missing `## Injected Context` → ❌ Check:
+  1. `.claude/hooks/context-injector.cjs` exists and is valid JS → re-copy from `references/templates/context-injector.cjs`
+  2. `.claude/manifest.json` exists and is valid JSON → re-generate from Step 7
+  3. L1 files exist at paths listed in manifest → re-run Step 4 if missing
 
 ---
 
@@ -555,11 +582,21 @@ If nothing stale → `✅ All LCP context files are up to date.` → exit.
 
 ### V4: Selective Update Prompt
 
+Build `AskUserQuestion` options dynamically from the stale items list:
+
 ```
-Select items to update (e.g.: 1,3 | all | none):
+header: "Update Context"
+question: "Select items to update:"
+options:
+  - label: "[1] {stale-item-description}"   description: "{file} — {reason}"
+  - label: "[2] {stale-item-description}"   description: "{file} — {reason}"
+  ... (one option per stale item)
+  - label: "All"    description: "Update all stale items"
+  - label: "None"   description: "Exit without changes"
+multiSelect: true
 ```
 
-`none` → exit without changes.
+If "None" selected → exit without changes.
 
 ### V5: Apply Selected Updates
 
@@ -588,7 +625,7 @@ Generated:
   wiki/global/ai-context/L1-always/        ← 2 files
   wiki/global/ai-context/L2-domain/        ← {N} files ({domains})
   wiki/global/ai-context/L3-reference/L3-index.md  ← {N} entries indexed
-  .specify/memory/constitution.md          ← {N} lines
+  .specify/memory/constitution.md          ← {N} lines  (only if spec-kit configured)
   CLAUDE.md                                ← updated
 
 packages/contracts/ ({case: fullstack|fe-only|be-only}):
