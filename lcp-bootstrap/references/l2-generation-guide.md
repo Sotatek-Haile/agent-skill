@@ -90,6 +90,29 @@ Thêm ORM-specific: `"typeorm"`, `"prisma"`, `"sequelize"`, `"drizzle"`
 
 ---
 
+## Domain: contracts
+
+**Tạo khi:** project là fullstack monorepo có shared types package (`packages/contracts/` hoặc tương tự)
+
+**Keywords mặc định:**
+```json
+["contracts", "packages", "shared types", "interface", "dto",
+ "api types", "request", "response", "abi", "barrel"]
+```
+
+**Nội dung cần có:**
+- Package name và import path: `import { ... } from '@{project}/contracts'`
+- `api/` directory structure: mỗi feature → 1 file (`api/{feature}.ts`)
+- Barrel export pattern (`index.ts` re-exports tất cả feature files)
+- Common types location: `api/common.ts` (ApiResponse<T>, PageMeta, PageQueryParams, ...)
+- Enums location: `api/enums.ts` (shared enums dùng across features)
+- ABI location: `abi/` (nếu có blockchain smart contracts)
+- Rule: BE và FE KHÔNG tự tạo types riêng — mọi API contract đi qua package này
+- Rule: package này là standalone — KHÔNG import package khác trong monorepo
+- Khi nào thêm type mới: mỗi feature mới → thêm `api/{feature}.ts` + re-export trong `index.ts`
+
+---
+
 ## Domain tùy chỉnh
 
 Tạo thêm domain nếu project có layer đặc thù:
