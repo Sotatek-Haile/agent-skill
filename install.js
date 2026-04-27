@@ -6,7 +6,9 @@ const os = require('os');
 
 const SKILLS_DIR = path.join(os.homedir(), '.claude', 'skills');
 const ROOT_DIR = __dirname;
-const RESERVED = ['uninstall', '--list', '--yes'];
+
+// Old skill folder names that were renamed — removed automatically on install
+const LEGACY_SKILLS = ['lcp-bootstrap', 'lcp-kit'];
 
 // Auto-discover skills: any subdirectory containing a SKILL.md file
 function discoverSkills() {
@@ -47,6 +49,15 @@ function install(targets, available) {
   const label = targets.length === available.length ? 'all' : targets.length;
   console.log(`\nInstalling ${label} skill(s) into ${SKILLS_DIR}...\n`);
   fs.mkdirSync(SKILLS_DIR, { recursive: true });
+
+  // Remove legacy skill folders from previous versions
+  LEGACY_SKILLS.forEach(legacy => {
+    const legacyDir = path.join(SKILLS_DIR, legacy);
+    if (fs.existsSync(legacyDir)) {
+      fs.rmSync(legacyDir, { recursive: true, force: true });
+      console.log(`  🧹 Removed legacy skill: ${legacy}`);
+    }
+  });
 
   targets.forEach(skill => {
     const destDir = path.join(SKILLS_DIR, skill);
