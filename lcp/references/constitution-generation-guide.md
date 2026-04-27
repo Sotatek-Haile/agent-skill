@@ -99,6 +99,21 @@ Technical architecture details: `wiki/global/architecture.md`
 ### Already exists (use & update, do NOT recreate)
 {Liệt kê những gì đã có, dev chỉ cần update}
 
+### Post-generation (REQUIRED after every /speckit.specify)
+
+After creating `wiki/specs/{id}-{name}/spec.md`, you MUST:
+
+1. **Update L3 index** — append the new spec entry to `wiki/global/ai-context/L3-reference/L3-index.md`:
+   ```
+   - [spec.md](../../../specs/{id}-{name}/spec.md) — {feature title} ({N} lines)
+   ```
+
+2. **Sync project-overview.md** — read the new spec, then check `wiki/global/project-overview.md`:
+   - New feature not described → add feature description to the Features section
+   - New actor not listed → add actor to the Actors section
+   - New business rule → add to Business Rules section
+   - If nothing new → skip (do not rewrite existing content)
+
 ## Feature Dependency Graph
 
 ```

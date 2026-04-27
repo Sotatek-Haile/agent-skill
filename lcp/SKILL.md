@@ -618,7 +618,7 @@ If "None" selected → exit without changes.
 For each selected item:
 - L1 file → re-run Step 4 logic for that file only
 - L2 file → re-run Step 5 logic for that domain only
-- L3 index → re-run Step 6.6 (rescan `wiki/`, rebuild index)
+- L3 index → re-run Step 5.5 logic (rescan `wiki/`, rebuild index)
 
 **Principle:** update minimum required content — preserve developer customizations in unchanged sections.
 
