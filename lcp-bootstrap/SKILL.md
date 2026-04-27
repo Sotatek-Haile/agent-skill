@@ -2,20 +2,22 @@
 name: lcp:bootstrap
 description: >-
   Bootstrap Layered Context Protocol (LCP) for new projects from requirements + WBS.
-  Auto-generates wiki, L1/L2 context files, and installs hook infrastructure.
+  Auto-generates wiki, L1/L2 context files, installs hook infrastructure,
+  and scaffolds shared packages/ for monorepo fullstack projects.
   Use when starting a new project or onboarding AI into an existing codebase.
 argument-hint: "<requirements-file> [wbs-file] [--be|--fe|--fullstack] [--with-spec-kit]"
 metadata:
   author: hai.le
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # LCP Bootstrap
 
 Automatically sets up the Layered Context Protocol for a new or existing project:
-- Reads requirements + WBS → extracts domain, actors, features, tech stack, rules
+- Reads requirements + WBS → extracts domain, actors, features, tech stack, shared packages, rules
 - Generates L1/L2 context files + wiki docs
 - Installs hook infrastructure (context-injector + settings)
+- Scaffolds `packages/contracts/` for fullstack monorepo projects
 - Optionally runs spec-kit to generate feature specs
 
 ## Usage
@@ -78,6 +80,13 @@ Analyze requirements to extract:
 - Frontend: framework, UI library, state management
 - Shared: type system, monorepo tool
 
+**Shared Packages (if monorepo):**
+- Does a `packages/` directory exist? List all `packages/*/package.json` names.
+- If no `packages/` exists and `--fullstack`: plan to create `packages/contracts/`
+- Dependency isolation rules: which package can import which? (extract from requirements or infer from monorepo structure)
+- Contract strategy: shared TypeScript types / OpenAPI / tRPC / GraphQL?
+- ABI files: does the project have blockchain smart contracts? (→ `packages/contracts/abi/`)
+
 **Cross-Feature Dependencies:**
 - Shared entities/tables used by multiple features
 - Shared services/validators
@@ -108,13 +117,14 @@ Target: 300-600 lines.
 2. If `docs/system-architecture.md` or `docs/*.md` exists → extract information
 3. Scan actual project directory structure (monorepo layout, package names, config files)
 4. Read `package.json` / `tsconfig.json` / `docker-compose.yml` for stack and ports
-5. Fall back to requirements if nothing else is available
+5. Scan `packages/*/package.json` to list all shared packages, their names, and roles
+6. Fall back to requirements if nothing else is available
 
 **Content required:**
-- Monorepo/directory structure (actual, not theoretical)
+- Monorepo/directory structure (actual, not theoretical) — include `packages/` entries
 - Tech stack with specific versions
-- Package dependency graph (which packages can import which)
-- API contracts / type sharing strategy
+- Package dependency graph (which packages can import which) — **include isolation table**
+- API contracts / type sharing strategy (`packages/contracts/api/` structure if present)
 - DB schema overview (main entities and relations)
 - Auth flow
 - Port mapping / deployment topology
@@ -132,13 +142,14 @@ Read `references/l1-generation-guide.md` to understand the format.
 
 Create `wiki/global/ai-context/L1-always/01-project-summary.md`:
 - Project identity + domain (2-3 sentences)
-- Monorepo structure (if applicable)
+- Monorepo structure (if applicable) — **include packages/ entries**
 - Actors table
 - Feature map with dependency graph
 - Key cross-feature dependencies
 
 Create `wiki/global/ai-context/L1-always/02-critical-rules.md`:
 - Rules inferred from tech stack
+- **Dependency isolation table** (if monorepo with multiple packages — see l1-generation-guide.md)
 - Only include rules where violations cause hard-to-debug bugs or conflicts
 - Format: rule name + code example ✅/❌ + brief reason
 
@@ -164,6 +175,9 @@ Create L2 files appropriate for the project type:
 **If design system / Tailwind:**
 - `wiki/global/ai-context/L2-domain/style.md`
 
+**If fullstack monorepo with shared packages:**
+- `wiki/global/ai-context/L2-domain/contracts.md`
+
 **If project has a specialized layer** (blockchain, queue, mobile...):
 - Create the corresponding domain file
 
@@ -188,6 +202,51 @@ Read content from `references/templates/context-injector.cjs` and write to the p
 **`.claude/settings.json`**
 If file exists: merge hook entry into the `hooks.UserPromptSubmit` array — do NOT overwrite the entire file.
 If not present: copy from `references/templates/settings.json`.
+
+---
+
+## Step 6.5: Scaffold packages/contracts/ (fullstack monorepo only)
+
+**Trigger condition:** `--fullstack` AND monorepo detected AND `packages/contracts/` does NOT already exist.
+
+If triggered, create the shared types package scaffold:
+
+**`packages/contracts/package.json`**
+Read template from `references/templates/contracts-package.json.tpl`.
+Replace `{project-name}` with the kebab-case project name extracted in Step 2.
+
+**`packages/contracts/tsconfig.json`**
+Read template from `references/templates/contracts-tsconfig.json.tpl`.
+
+**`packages/contracts/index.ts`**
+Read template from `references/templates/contracts-index.ts.tpl`.
+Uncomment the feature export lines that match features extracted from WBS.
+
+**`packages/contracts/api/common.ts`**
+Read template from `references/templates/contracts-api-common.ts.tpl`.
+Contains: `ApiResponse<T>`, `PageMeta`, `PageQueryParams`, `DateRangeFilter` — copy as-is.
+
+**`packages/contracts/api/enums.ts`**
+Read template from `references/templates/contracts-api-enums.ts.tpl`.
+Add enum stubs for any domain-specific enums found in requirements (e.g. status values, categories).
+
+**Feature-specific type stubs:**
+For each feature in the WBS, create `packages/contracts/api/{feature-slug}.ts`:
+```typescript
+// ============================================================
+// {Feature Name} — {Feature ID}
+// ============================================================
+
+// TODO: Define request/response types for {feature-name} feature
+// export interface Create{Feature}Request { ... }
+// export interface {Feature}Response { ... }
+// export interface {Feature}ListItem { ... }
+```
+
+**Update workspace root `package.json`:**
+If `packages/contracts` is not listed in the `workspaces` array, add it.
+
+**If `packages/contracts/` already exists:** skip scaffold entirely — the codebase already has types defined.
 
 ---
 
@@ -328,8 +387,9 @@ Project context (business domain, critical rules, patterns) is auto-injected via
 Before writing any code:
 1. Check if feature spec exists under `wiki/specs/{id}-{name}/` — if not, create one
 2. Read the feature's `spec.md`, `plan.md`, and `tasks.md` if they exist
-3. Confirm correct feature branch
-4. Review existing entities/models to avoid duplication
+3. {If fullstack monorepo}: API types are in `packages/contracts/api/{feature}.ts` — do NOT create new contract files outside this package
+4. Confirm correct feature branch
+5. Review existing entities/models to avoid duplication
 
 ## Tech Stack
 {1-line per layer: Backend, Frontend, Shared, Package manager}
@@ -390,13 +450,22 @@ Generated:
   wiki/specs/                             ← spec output directory
   CLAUDE.md                                ← updated
 
+Packages scaffolded (if fullstack monorepo):
+  packages/contracts/package.json          ← @{project}/contracts
+  packages/contracts/tsconfig.json
+  packages/contracts/index.ts              ← barrel export
+  packages/contracts/api/common.ts         ← ApiResponse<T>, PageMeta, ...
+  packages/contracts/api/enums.ts          ← domain enums
+  packages/contracts/api/{feature}.ts      ← {N} feature stubs from WBS
+
 Test result: {PASS/FAIL}
 
 Next steps:
   1. Review generated files, adjust content if needed
   2. git add + commit: feat(ai-tooling): init LCP context protocol
   3. {If --with-spec-kit}: spec-kit initialized → see wiki/specs/
-  4. Open a new Claude session to verify context injection
+  4. {If packages scaffolded}: fill in type definitions per feature spec
+  5. Open a new Claude session to verify context injection
 ```
 
 ---
@@ -408,3 +477,8 @@ Next steps:
 - `references/constitution-generation-guide.md` — structure + extraction guide for .specify/memory/constitution.md
 - `references/templates/context-injector.cjs` — hook script template
 - `references/templates/settings.json` — settings template
+- `references/templates/contracts-package.json.tpl` — packages/contracts/package.json template
+- `references/templates/contracts-tsconfig.json.tpl` — packages/contracts/tsconfig.json template
+- `references/templates/contracts-index.ts.tpl` — packages/contracts/index.ts template
+- `references/templates/contracts-api-common.ts.tpl` — ApiResponse<T>, PageMeta types
+- `references/templates/contracts-api-enums.ts.tpl` — shared enums template
