@@ -6,7 +6,7 @@ A collection of Claude Code skills for AI-assisted development workflows.
 
 | Skill | Command | Description |
 |-------|---------|-------------|
-| [lcp-kit](./lcp-kit/SKILL.md) | `/lcp:bootstrap` | Bootstrap Layered Context Protocol (LCP) for new or existing projects |
+| [lcp](./lcp/SKILL.md) | `/lcp:bootstrap` | Bootstrap Layered Context Protocol (LCP) for new or existing projects |
 
 ---
 
@@ -24,7 +24,7 @@ A collection of Claude Code skills for AI-assisted development workflows.
 npx github:Sotatek-Haile/agent-skill
 
 # Specific skill
-npx github:Sotatek-Haile/agent-skill lcp-kit
+npx github:Sotatek-Haile/agent-skill lcp
 
 # List available skills
 npx github:Sotatek-Haile/agent-skill --list
@@ -37,7 +37,7 @@ npx github:Sotatek-Haile/agent-skill --list
 npx --yes github:Sotatek-Haile/agent-skill
 
 # Specific skill
-npx --yes github:Sotatek-Haile/agent-skill lcp-kit
+npx --yes github:Sotatek-Haile/agent-skill lcp
 ```
 
 > `--yes` forces npx to re-fetch from GitHub instead of using local cache.
@@ -49,7 +49,7 @@ npx --yes github:Sotatek-Haile/agent-skill lcp-kit
 npx github:Sotatek-Haile/agent-skill uninstall
 
 # Specific skill
-npx github:Sotatek-Haile/agent-skill uninstall lcp-kit
+npx github:Sotatek-Haile/agent-skill uninstall lcp
 ```
 
 ---
@@ -111,7 +111,7 @@ To add a new skill, create a subdirectory with a `SKILL.md` file — the install
 
 ```
 agent-skill/
-├── lcp-kit/
+├── lcp/
 │   └── SKILL.md
 ├── my-new-skill/
 │   └── SKILL.md       ← auto-discovered on next install
