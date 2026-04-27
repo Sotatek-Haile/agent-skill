@@ -1,16 +1,4 @@
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "lib": ["ES2020"],
-    "declaration": true,
-    "outDir": "./dist",
-    "rootDir": ".",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": ["./**/*.ts"],
-  "exclude": ["node_modules", "dist"]
-}
+// DEPRECATED — no longer needed
+// packages/contracts/ no longer compiles TypeScript.
+// Contracts are pure JSON Schema files (Draft 7) — no build step required.
+// See: references/contracts-scaffold-guide.md
